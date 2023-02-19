@@ -1,86 +1,97 @@
 import { Component } from 'react';
-import Section from './Section/Section';
-import FeedbackOptions from './FeedbackOptions/FeedbackOptions';
-import Statistics from './Statistics/Statistics';
+import Contacts from './Contacts/Contacts';
+import Filter from './Filter/Filter';
+import ContactForm from './ContactForm/ContactForm';
+
+const initialState = {
+  contacts: [
+    { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+    { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+    { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+    { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+  ],
+  filter: '',
+};
 
 class App extends Component {
   state = {
-    good: 0,
-    neutral: 0,
-    bad: 0,
+    ...initialState,
   };
 
   constructor() {
     super();
-    this.handleGoodClick = this.handleGoodClick.bind(this);
-    this.handleNeutralClick = this.handleNeutralClick.bind(this);
-    this.handleBadClick = this.handleBadClick.bind(this);
+    this.addNewContact = this.addNewContact.bind(this);
+    // this.deleteContact = this.deleteContact.bind(this);
   }
 
-  handleGoodClick() {
+  handleChange = event => {
+    const { name, value } = event.target;
     this.setState(prevState => {
-      return { good: prevState.good + 1 };
+      return { [name]: value };
     });
-    this.countTotalFeedback();
-    this.countPositiveFeedbackPercentage();
-  }
+  };
 
-  handleNeutralClick() {
-    this.setState(prevState => {
-      return { neutral: prevState.neutral + 1 };
-    });
-    this.countTotalFeedback();
-    this.countPositiveFeedbackPercentage();
-  }
+  addNewContact = newContact => {
+    if (this.state.contacts.find(contact => contact.name === newContact.name)) {
+      alert(`${newContact.name} is already in contacts.`);
+      return;
+    }
 
-  handleBadClick() {
     this.setState(prevState => {
-      return { bad: prevState.bad + 1 };
+      return { ...initialState, contacts: [...prevState.contacts, newContact] };
     });
-    this.countTotalFeedback();
-    this.countPositiveFeedbackPercentage();
-  }
+  };
+
+  getContacts = () => {
+    const myContacts = this.state.contacts
+      .filter(contact =>
+        contact.name
+          .toLocaleLowerCase()
+          .includes(this.state.filter.toLocaleLowerCase())
+      )
+      .map(contact => (
+        <li key={contact.id}>
+          {contact.name} {contact.number}
+        </li>
+      ));
+
+    return <>{myContacts}</>;
+  };
+
+  deleteContact = id => {
+    const contactToDelete = this.state.contacts.find(
+      contact => contact.id === id
+    );
+
+    if (contactToDelete) {
+      const contactIndex = this.state.contacts.indexOf(contactToDelete);
+
+      if (contactIndex >= 0) {
+        this.setState(prevState => {
+          const currentContacts = [...prevState.contacts];
+          currentContacts.splice(contactIndex, 1);
+          return { contacts: currentContacts };
+        });
+      }
+    }
+  };
 
   render() {
+    const { filter } = this.state;
     return (
-      <div style={{
-        height: '100vh',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: 40,
-        color: '#010101',
-      }}>
-        <Section title="Please leave feedback">
-          <FeedbackOptions
-            handleGoodClick={this.handleGoodClick}
-            handleNeutralClick={this.handleNeutralClick}
-            handleBadClick={this.handleBadClick}
-          />
-        </Section>
-        <Section title="Statistics">
-          <Statistics
-            good={this.state.good}
-            neutral={this.state.neutral}
-            bad={this.state.bad}
-            countTotalFeedback={this.countTotalFeedback}
-            countPositiveFeedbackPercentage={this.countPositiveFeedbackPercentage}
-          />
-        </Section>
-      </div>
+      <>
+        <h1 style={{ display: 'flex', justifyContent: 'center' }}>Phonebook</h1>
+        <ContactForm callback={this.addNewContact} />
+        <h2 style={{ display: 'flex', justifyContent: 'center' }}>Contacts</h2>
+        <Filter filter={filter} handleChange={this.handleChange}></Filter>
+        <Contacts
+          contacts={this.state.contacts}
+          filter={this.state.filter}
+          deleteContact={this.deleteContact}
+        ></Contacts>
+      </>
     );
   }
-
-  countTotalFeedback = () => {
-    return this.state.good + this.state.neutral + this.state.bad;
-  };
-
-  countPositiveFeedbackPercentage = () => {
-    const total = this.countTotalFeedback();
-    if (total === 0) {
-      return 0;
-    }
-    return Math.round((this.state.good / this.countTotalFeedback()) * 100);
-  };
 }
 
 export default App;
